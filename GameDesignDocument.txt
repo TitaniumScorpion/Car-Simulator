@@ -1,0 +1,43 @@
+Game Design Document: Car Simulator (Serious Game)
+
+1. PROJECT OVERVIEW
+- Game Title: 
+- Genre: Serious Game / Simulation
+- Target Audience: 
+- Platform (PC, Mobile, VR): 
+
+2. EDUCATIONAL OBJECTIVES
+- Primary Learning Goal: Provide beginners with a fundamental understanding of operating a vehicle and basic traffic rules before they drive a real car.
+- Key Driving Skills to Teach: Steering control, smooth acceleration/braking, using turn signals, obeying traffic lights/signs, checking mirrors, and basic parking.
+- Assessment/Feedback Method: Visual HUD alerts, a virtual driving instructor (audio/text feedback), and score deduction for infractions (e.g., speeding, missing a signal).
+
+3. CORE GAMEPLAY MECHANICS
+- Vehicle Controls: Realistic but accessible input. Support for Keyboard/Mouse, Gamepad, and Steering Wheel. Features Automatic and basic Manual transmission toggles.
+- Camera Views: Default First-person (driver's seat) with fully functional rear-view and side mirrors. Optional Third-person view for spatial awareness.
+- Interaction with Environment: Dynamic traffic lights, road signs, and static obstacles (e.g., traffic cones, stationary parked cars). No AI traffic or pedestrians to keep the scope manageable.
+- Physics Simulation Level: Realistic leaning. Focus on proper braking distances, vehicle weight, and turning radius, but slightly forgiving to avoid player frustration.
+
+4. GAME LOOP & PROGRESSION
+- Main Game Loop: Player attempts to complete the level's objective, receives an end-of-level report with score/feedback, and progresses to the next level or returns to the menu.
+- Levels/Scenarios: 2 levels in total. Level 1 (Starting Level): Driving Level (navigating a road layout, obeying traffic rules). Level 2: Parking Level (precision parking challenges).
+- Win/Loss Conditions: Win by reaching the destination/parking spot with a passing score. Lose/Fail by accumulating too many penalty points (e.g., hitting static objects, running red lights).
+
+5. USER INTERFACE (HUD)
+- On-Screen Elements: Strictly diegetic car interior (Speedometer, Gear, and Turn Signals are read directly from the 3D car dashboard). The only traditional HUD element will be a dedicated notification area for instructor feedback/penalties.
+- Menus: Simple Main Menu (Start, Level Select, Quit), Pause Menu, and Settings (Input controls, automatic/manual toggle).
+- Tutorial Prompts: Text overlays that appear at the start of the first level to explain basic controls.
+
+6. ART & AUDIO
+- Visual Style: Clean and realistic. Focus on clear visibility of road markings, signs, and a highly detailed, accurate car interior for the diegetic UI.
+- Environment Design: Well-lit daytime environments. Level 1 features a structured road layout with intersections and signs. Level 2 features an enclosed parking lot with various marked bays (parallel, reverse, forward).
+- Sound Effects: Realistic engine sounds synced to RPM, distinct turn signal clicking, tire friction/skidding sounds, and collision impacts. Clear chimes or voiceovers for instructor feedback.
+
+7. TECHNICAL SPECIFICATIONS
+- Unity Version: Latest Long Term Support (LTS) version (e.g., Unity 2022 LTS) for maximum stability.
+- Key Assets/Packages Required: Universal Render Pipeline (URP) for optimized realistic graphics, New Input System for flexible peripheral support, and WheelColliders for vehicle physics.
+- Input Devices Supported: Keyboard & Mouse (WASD/Arrows), Gamepads (Analog triggers for gas/brake), and PC Steering Wheels.
+
+8. FUTURE IDEAS / PARKING LOT
+- Ideas for later updates: AI traffic and pedestrians to simulate real-world congestion.
+- Nighttime driving and weather conditions (rain/snow) affecting visibility and physics.
+- VR Support for ultimate immersion and head-tracking.
