@@ -181,7 +181,7 @@ Transform:
   m_GameObject: {fileID: 57971524}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.484, y: 0.263, z: -0.504}
+  m_LocalPosition: {x: -0.45000002, y: 0.263, z: -0.504}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -490,12 +490,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraManager
   fpsHead: {fileID: 1579000986}
   carTarget: {fileID: 1298931019}
-  tpsOffset: {x: 0, y: 3, z: -8}
+  tpsOffset: {x: 0, y: 3, z: -10}
   tpsLookAhead: 4
   tpsLookHeightOffset: 0.5
   followSpeed: 5
   rotateSpeed: 5
-  transitionDuration: 0.5
+  transitionDuration: 0.3
 --- !u!1 &336145833
 GameObject:
   m_ObjectHideFlags: 0
@@ -977,7 +977,7 @@ Transform:
   m_GameObject: {fileID: 544554179}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.0558, y: 0.263, z: -0.5073}
+  m_LocalPosition: {x: 0.021299941, y: 0.263, z: -0.5073002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1425,7 +1425,7 @@ Transform:
   m_GameObject: {fileID: 1116929501}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.484, y: 0.263, z: 0.375}
+  m_LocalPosition: {x: -0.45, y: 0.263, z: 0.375}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1812,7 +1812,6 @@ MonoBehaviour:
   carController: {fileID: 1298931017}
   cameraManager: {fileID: 330585548}
   exitPoint: {fileID: 668352651}
-  exitSpeedThreshold: 1
 --- !u!1 &1579000985
 GameObject:
   m_ObjectHideFlags: 0
@@ -1870,7 +1869,7 @@ Transform:
   m_GameObject: {fileID: 1612833727}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.0545, y: 0.263, z: 0.375}
+  m_LocalPosition: {x: 0.02, y: 0.263, z: 0.375}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
