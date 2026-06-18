@@ -46,7 +46,7 @@ public class NpcCarController : MonoBehaviour
 
     private void Start()
     {
-        GameObject player = GameObject.FindWithTag("Player");
+        GameObject player = GameObject.FindWithTag("PlayerCar");
         if (player != null)
         {
             playerCar = player.transform;
@@ -152,7 +152,7 @@ public class NpcCarController : MonoBehaviour
     private void UpdateSingleWheel(WheelCollider col, Transform t)
     {
         col.GetWorldPose(out Vector3 pos, out Quaternion rot);
-        t.SetPositionAndRotation(pos, rot);
+        t.SetPositionAndRotation(pos, rot * Quaternion.Euler(0f, 0f, 90f));
     }
 
     public void ForceStop(bool stop)

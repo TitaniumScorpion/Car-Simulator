@@ -112,6 +112,6 @@ public class CarController : MonoBehaviour
         Quaternion rot;
         wheelCollider.GetWorldPose(out pos, out rot);
         wheelTransform.position = pos;
-        wheelTransform.rotation = rot;
+        wheelTransform.rotation = rot * Quaternion.Euler(0f, 0f, 90f);
     }
 }
