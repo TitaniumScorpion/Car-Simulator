@@ -33,6 +33,7 @@ public class NpcCarController : MonoBehaviour
     private Rigidbody rb;
     private Transform playerCar;
     private bool forceStopped;
+    private float currentSteerAngle;
 
     private void Awake()
     {
@@ -47,7 +48,14 @@ public class NpcCarController : MonoBehaviour
     {
         GameObject player = GameObject.FindWithTag("Player");
         if (player != null)
+        {
             playerCar = player.transform;
+            Collider[] npcColliders = GetComponentsInChildren<Collider>();
+            Collider[] playerColliders = player.GetComponentsInChildren<Collider>();
+            foreach (var nc in npcColliders)
+                foreach (var pc in playerColliders)
+                    Physics.IgnoreCollision(nc, pc);
+        }
     }
 
     private void Update()
@@ -75,11 +83,12 @@ public class NpcCarController : MonoBehaviour
     private void HandleSteering()
     {
         Vector3 localTarget = transform.InverseTransformPoint(agent.steeringTarget);
-        float steerAngle = Mathf.Atan2(localTarget.x, localTarget.z) * Mathf.Rad2Deg;
-        steerAngle = Mathf.Clamp(steerAngle, -maxSteeringAngle, maxSteeringAngle);
+        float targetSteerAngle = Mathf.Atan2(localTarget.x, localTarget.z) * Mathf.Rad2Deg;
+        targetSteerAngle = Mathf.Clamp(targetSteerAngle, -maxSteeringAngle, maxSteeringAngle);
+        currentSteerAngle = Mathf.Lerp(currentSteerAngle, targetSteerAngle, Time.fixedDeltaTime * 5f);
 
-        frontLeftWheelCollider.steerAngle = steerAngle;
-        frontRightWheelCollider.steerAngle = steerAngle;
+        frontLeftWheelCollider.steerAngle = currentSteerAngle;
+        frontRightWheelCollider.steerAngle = currentSteerAngle;
     }
 
     private void HandleMotor()
