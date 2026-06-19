@@ -21,11 +21,18 @@ public class CarController : MonoBehaviour
     public float maxSteeringAngle = 30f;
 
     [Header("Transmission")]
-    public bool isAutomatic = true;
     [Tooltip("Speed thresholds in km/h to shift up: 1->2, 2->3, 3->4, 4->5")]
     public float[] gearUpSpeeds = { 20f, 45f, 75f, 110f };
     [Tooltip("Torque multiplier per forward gear (index 0 = gear 1)")]
     public float[] gearTorqueMultipliers = { 2.0f, 1.5f, 1.0f, 0.75f, 0.5f };
+
+    [Header("Turn Signal Lights")]
+    public Light[] leftTurnLights;
+    public Light[] rightTurnLights;
+
+    [Header("Horn")]
+    public AudioClip hornClip;
+    public AudioSource hornSource;
 
     private float horizontalInput;
     private float verticalInput;
@@ -35,24 +42,33 @@ public class CarController : MonoBehaviour
     private int currentGear = 1;
     private Rigidbody rb;
 
-    public float SpeedKmh => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
-    public int CurrentGear => currentGear;
-    public bool IsAutomatic => isAutomatic;
+    private bool leftSignalOn;
+    private bool rightSignalOn;
+    private float blinkTimer;
+    private bool blinkState;
+
+    public float SpeedKmh  => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
+    public int   CurrentGear  => currentGear;
+    public bool  LeftSignalOn  => leftSignalOn;
+    public bool  RightSignalOn => rightSignalOn;
+    public bool  BlinkState    => blinkState;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        SetLights(leftTurnLights,  false);
+        SetLights(rightTurnLights, false);
     }
 
     private void Update()
     {
         GetInput();
         UpdateWheelVisuals();
+        UpdateBlinkers();
     }
 
     private void FixedUpdate()
     {
-        if (isAutomatic) AutoShift();
         HandleMotor();
         HandleSteering();
     }
@@ -60,8 +76,8 @@ public class CarController : MonoBehaviour
     private void GetInput()
     {
         horizontalInput = 0f;
-        verticalInput = 0f;
-        isBraking = false;
+        verticalInput   = 0f;
+        isBraking       = false;
 
         if (Keyboard.current != null)
         {
@@ -72,16 +88,13 @@ public class CarController : MonoBehaviour
 
             isBraking = Keyboard.current.spaceKey.isPressed;
 
-            if (Keyboard.current.tKey.wasPressedThisFrame)
-                ToggleTransmission();
+            if (Keyboard.current.qKey.wasPressedThisFrame) ShiftUp();
+            if (Keyboard.current.zKey.wasPressedThisFrame) ShiftDown();
 
-            if (!isAutomatic)
-            {
-                if (Keyboard.current.qKey.wasPressedThisFrame)
-                    ShiftUp();
-                if (Keyboard.current.zKey.wasPressedThisFrame)
-                    ShiftDown();
-            }
+            if (Keyboard.current.xKey.wasPressedThisFrame) ToggleLeftSignal();
+            if (Keyboard.current.cKey.wasPressedThisFrame) ToggleRightSignal();
+
+            HandleHorn(Keyboard.current.fKey.isPressed);
         }
 
         if (Gamepad.current != null)
@@ -90,29 +103,61 @@ public class CarController : MonoBehaviour
             if (stick.sqrMagnitude > 0.01f)
             {
                 horizontalInput = stick.x;
-                verticalInput = stick.y;
+                verticalInput   = stick.y;
             }
 
             if (Gamepad.current.buttonSouth.isPressed || Gamepad.current.leftTrigger.isPressed)
                 isBraking = true;
 
-            if (Gamepad.current.selectButton.wasPressedThisFrame)
-                ToggleTransmission();
-
-            if (!isAutomatic)
-            {
-                if (Gamepad.current.rightShoulder.wasPressedThisFrame)
-                    ShiftUp();
-                if (Gamepad.current.leftShoulder.wasPressedThisFrame)
-                    ShiftDown();
-            }
+            if (Gamepad.current.rightShoulder.wasPressedThisFrame) ShiftUp();
+            if (Gamepad.current.leftShoulder.wasPressedThisFrame)  ShiftDown();
         }
     }
 
-    private void ToggleTransmission()
+    private void ToggleLeftSignal()
     {
-        isAutomatic = !isAutomatic;
-        if (isAutomatic) currentGear = 1;
+        leftSignalOn  = !leftSignalOn;
+        rightSignalOn = false;
+        if (!leftSignalOn) SetLights(leftTurnLights, false);
+    }
+
+    private void ToggleRightSignal()
+    {
+        rightSignalOn = !rightSignalOn;
+        leftSignalOn  = false;
+        if (!rightSignalOn) SetLights(rightTurnLights, false);
+    }
+
+    private void UpdateBlinkers()
+    {
+        if (leftSignalOn || rightSignalOn)
+        {
+            blinkTimer += Time.deltaTime;
+            if (blinkTimer >= 0.5f) { blinkState = !blinkState; blinkTimer = 0f; }
+        }
+        else
+        {
+            blinkState = false;
+            blinkTimer = 0f;
+        }
+
+        SetLights(leftTurnLights,  leftSignalOn  && blinkState);
+        SetLights(rightTurnLights, rightSignalOn && blinkState);
+    }
+
+    private void HandleHorn(bool pressed)
+    {
+        if (hornSource == null || hornClip == null) return;
+        if (pressed && !hornSource.isPlaying)
+            hornSource.PlayOneShot(hornClip);
+        else if (!pressed && hornSource.isPlaying)
+            hornSource.Stop();
+    }
+
+    private static void SetLights(Light[] lights, bool on)
+    {
+        if (lights == null) return;
+        foreach (var l in lights) if (l != null) l.enabled = on;
     }
 
     private void ShiftUp()
@@ -127,47 +172,23 @@ public class CarController : MonoBehaviour
         else if (currentGear > 1) currentGear--;
     }
 
-    private void AutoShift()
-    {
-        bool movingBackward = Vector3.Dot(rb.linearVelocity, transform.forward) < -0.5f;
-        bool inputtingBackward = verticalInput < -0.1f;
-
-        if (movingBackward || (inputtingBackward && SpeedKmh < 3f))
-        {
-            currentGear = -1;
-            return;
-        }
-
-        if (currentGear == -1 && !movingBackward)
-            currentGear = 1;
-
-        int newGear = 1;
-        for (int i = 0; i < gearUpSpeeds.Length; i++)
-        {
-            if (SpeedKmh >= gearUpSpeeds[i]) newGear = i + 2;
-        }
-        currentGear = Mathf.Clamp(newGear, 1, gearTorqueMultipliers.Length);
-    }
-
     private void HandleMotor()
     {
         float motorTorque;
 
         if (currentGear == -1)
         {
-            // Reverse: only S-key input (negative) drives the car; W is ignored
             float input = Mathf.Min(verticalInput, 0f);
             motorTorque = input * motorForce * 1.5f;
         }
         else
         {
-            // Forward gears: only W-key input (positive) drives the car; S is ignored
-            float input = Mathf.Max(verticalInput, 0f);
+            float input      = Mathf.Max(verticalInput, 0f);
             float multiplier = gearTorqueMultipliers[Mathf.Clamp(currentGear - 1, 0, gearTorqueMultipliers.Length - 1)];
-            motorTorque = input * motorForce * multiplier;
+            motorTorque      = input * motorForce * multiplier;
         }
 
-        frontLeftWheelCollider.motorTorque = motorTorque;
+        frontLeftWheelCollider.motorTorque  = motorTorque;
         frontRightWheelCollider.motorTorque = motorTorque;
 
         currentBrakeForce = isBraking ? brakeForce : 0f;
@@ -176,32 +197,30 @@ public class CarController : MonoBehaviour
 
     private void ApplyBraking()
     {
-        frontLeftWheelCollider.brakeTorque = currentBrakeForce;
+        frontLeftWheelCollider.brakeTorque  = currentBrakeForce;
         frontRightWheelCollider.brakeTorque = currentBrakeForce;
-        rearLeftWheelCollider.brakeTorque = currentBrakeForce;
-        rearRightWheelCollider.brakeTorque = currentBrakeForce;
+        rearLeftWheelCollider.brakeTorque   = currentBrakeForce;
+        rearRightWheelCollider.brakeTorque  = currentBrakeForce;
     }
 
     private void HandleSteering()
     {
         currentSteeringAngle = maxSteeringAngle * horizontalInput;
-        frontLeftWheelCollider.steerAngle = currentSteeringAngle;
+        frontLeftWheelCollider.steerAngle  = currentSteeringAngle;
         frontRightWheelCollider.steerAngle = currentSteeringAngle;
     }
 
     private void UpdateWheelVisuals()
     {
-        UpdateSingleWheel(frontLeftWheelCollider, frontLeftWheelTransform);
+        UpdateSingleWheel(frontLeftWheelCollider,  frontLeftWheelTransform);
         UpdateSingleWheel(frontRightWheelCollider, frontRightWheelTransform);
-        UpdateSingleWheel(rearLeftWheelCollider, rearLeftWheelTransform);
-        UpdateSingleWheel(rearRightWheelCollider, rearRightWheelTransform);
+        UpdateSingleWheel(rearLeftWheelCollider,   rearLeftWheelTransform);
+        UpdateSingleWheel(rearRightWheelCollider,  rearRightWheelTransform);
     }
 
     private void UpdateSingleWheel(WheelCollider wheelCollider, Transform wheelTransform)
     {
-        Vector3 pos;
-        Quaternion rot;
-        wheelCollider.GetWorldPose(out pos, out rot);
+        wheelCollider.GetWorldPose(out Vector3 pos, out Quaternion rot);
         wheelTransform.position = pos;
         wheelTransform.rotation = rot * Quaternion.Euler(0f, 0f, 90f);
     }
