@@ -2569,7 +2569,7 @@ MonoBehaviour:
   - {fileID: 1656663688}
   rightTurnLights:
   - {fileID: 1172515010}
-  hornClip: {fileID: 8300000, guid: f86e57eae55606e48b3aa702a36c972a, type: 3}
+  hornClip: {fileID: 8300000, guid: 815efcfbbc3b24541ad9a3a9b5032fd2, type: 3}
   hornSource: {fileID: 1298931020}
 --- !u!54 &1298931018
 Rigidbody:
