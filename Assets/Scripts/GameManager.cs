@@ -45,6 +45,7 @@ public class GameManager : MonoBehaviour
     public void EnterCar()
     {
         if (State == GameState.InCar || interactCooldown > 0f) return;
+        if (NpcDialogue.Instance != null && !NpcDialogue.Instance.CarUnlocked) return;
         interactCooldown = 1f;
         State = GameState.InCar;
         fpsController.enabled = false;
