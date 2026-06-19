@@ -28,6 +28,7 @@ public class GameManager : MonoBehaviour
         carRigidbody = carController.GetComponent<Rigidbody>();
         carRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
         carRigidbody.isKinematic = true;
+        carController.enabled = false;
     }
 
     private void Update()
