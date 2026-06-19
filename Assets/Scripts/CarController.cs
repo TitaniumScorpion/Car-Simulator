@@ -94,7 +94,7 @@ public class CarController : MonoBehaviour
             if (Keyboard.current.xKey.wasPressedThisFrame) ToggleLeftSignal();
             if (Keyboard.current.cKey.wasPressedThisFrame) ToggleRightSignal();
 
-            if (Keyboard.current.fKey.wasPressedThisFrame) HandleHorn();
+            HandleHorn(Keyboard.current.fKey.isPressed);
         }
 
         if (Gamepad.current != null)
@@ -145,11 +145,13 @@ public class CarController : MonoBehaviour
         SetLights(rightTurnLights, rightSignalOn && blinkState);
     }
 
-    private void HandleHorn()
+    private void HandleHorn(bool pressed)
     {
         if (hornSource == null || hornClip == null) return;
-        if (hornSource.isPlaying) return;
-        hornSource.PlayOneShot(hornClip);
+        if (pressed && !hornSource.isPlaying)
+            hornSource.PlayOneShot(hornClip);
+        else if (!pressed && hornSource.isPlaying)
+            hornSource.Stop();
     }
 
     private static void SetLights(Light[] lights, bool on)
