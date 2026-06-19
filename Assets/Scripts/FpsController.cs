@@ -21,6 +21,7 @@ public class FpsController : MonoBehaviour
     private float xRotation;
     private Vector3 velocity;
     private CarController nearbyVehicle;
+    private NpcDialogue nearbyNpc;
 
     private void Awake()
     {
@@ -39,11 +40,13 @@ public class FpsController : MonoBehaviour
         HandleLook();
         HandleMovement();
         DetectVehicle();
+        DetectNpc();
         HandleInteract();
     }
 
     private void HandleLook()
     {
+        if (NpcDialogue.Instance != null && NpcDialogue.Instance.IsDialogOpen) return;
         if (Mouse.current == null) return;
         Vector2 look = Mouse.current.delta.ReadValue();
         xRotation -= look.y * mouseSensitivity;
@@ -54,6 +57,7 @@ public class FpsController : MonoBehaviour
 
     private void HandleMovement()
     {
+        if (NpcDialogue.Instance != null && NpcDialogue.Instance.IsDialogOpen) return;
         if (cc.isGrounded && velocity.y < 0f)
             velocity.y = -2f;
 
@@ -101,6 +105,17 @@ public class FpsController : MonoBehaviour
         }
     }
 
+    private void DetectNpc()
+    {
+        Collider[] hits = Physics.OverlapSphere(transform.position, interactRange);
+        nearbyNpc = null;
+        foreach (var col in hits)
+        {
+            var npc = col.GetComponentInParent<NpcDialogue>();
+            if (npc != null) { nearbyNpc = npc; break; }
+        }
+    }
+
     private bool IsLookingAtVehicle()
     {
         if (nearbyVehicle == null) return false;
@@ -112,18 +127,44 @@ public class FpsController : MonoBehaviour
     {
         bool ePressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
         bool yPressed = Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame;
-        if ((ePressed || yPressed) && nearbyVehicle != null && IsLookingAtVehicle())
+
+        if (NpcDialogue.Instance != null && NpcDialogue.Instance.IsDialogOpen)
+        {
+            if (ePressed || yPressed) NpcDialogue.Instance.CloseDialog();
+            return;
+        }
+
+        bool carUnlocked = NpcDialogue.Instance == null || NpcDialogue.Instance.CarUnlocked;
+
+        if ((ePressed || yPressed) && nearbyNpc != null && !carUnlocked)
+        {
+            nearbyNpc.OpenDialog();
+            return;
+        }
+
+        if ((ePressed || yPressed) && nearbyVehicle != null && IsLookingAtVehicle() && carUnlocked)
             GameManager.Instance.EnterCar();
     }
 
     private void OnGUI()
     {
-        if (nearbyVehicle == null || !IsLookingAtVehicle()) return;
+        if (NpcDialogue.Instance != null && NpcDialogue.Instance.IsDialogOpen) return;
+
+        bool carUnlocked = NpcDialogue.Instance == null || NpcDialogue.Instance.CarUnlocked;
+
         GUIStyle style = new GUIStyle(GUI.skin.label);
         style.fontSize = 28;
         style.fontStyle = FontStyle.Bold;
         style.normal.textColor = Color.white;
         style.alignment = TextAnchor.MiddleCenter;
+
+        if (nearbyNpc != null && !carUnlocked)
+        {
+            GUI.Label(new Rect(Screen.width / 2f - 160, Screen.height * 0.75f, 320, 50), "[E] Talk", style);
+            return;
+        }
+
+        if (nearbyVehicle == null || !IsLookingAtVehicle() || !carUnlocked) return;
         GUI.Label(new Rect(Screen.width / 2f - 160, Screen.height * 0.75f, 320, 50), "[E] Araca Bin", style);
     }
 }

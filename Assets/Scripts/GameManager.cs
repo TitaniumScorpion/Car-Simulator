@@ -28,6 +28,7 @@ public class GameManager : MonoBehaviour
         carRigidbody = carController.GetComponent<Rigidbody>();
         carRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
         carRigidbody.isKinematic = true;
+        carController.enabled = false;
     }
 
     private void Update()
@@ -44,6 +45,7 @@ public class GameManager : MonoBehaviour
     public void EnterCar()
     {
         if (State == GameState.InCar || interactCooldown > 0f) return;
+        if (NpcDialogue.Instance != null && !NpcDialogue.Instance.CarUnlocked) return;
         interactCooldown = 1f;
         State = GameState.InCar;
         fpsController.enabled = false;

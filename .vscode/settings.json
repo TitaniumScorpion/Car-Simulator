@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Car Simulator.slnx"
+    "dotnet.defaultSolution": "Car-Simulator.slnx"
 }
