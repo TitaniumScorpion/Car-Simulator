@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+    public static bool StartInCar = false;
 
     public enum GameState { OnFoot, InCar }
     public GameState State { get; private set; } = GameState.OnFoot;
@@ -15,6 +16,7 @@ public class GameManager : MonoBehaviour
     public Transform exitPoint;
 
     private Rigidbody carRigidbody;
+    private CharacterController playerCollider;
     private float interactCooldown;
 
     private void Awake()
@@ -29,6 +31,13 @@ public class GameManager : MonoBehaviour
         carRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
         carRigidbody.isKinematic = true;
         carController.enabled = false;
+        playerCollider = fpsController.GetComponent<CharacterController>();
+
+        if (StartInCar)
+        {
+            StartInCar = false;
+            EnterCar();
+        }
     }
 
     private void Update()
@@ -38,7 +47,7 @@ public class GameManager : MonoBehaviour
         if (State != GameState.InCar) return;
         bool ePressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
         bool yPressed = Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame;
-        if ((ePressed || yPressed) && interactCooldown <= 0f)
+        if ((ePressed || yPressed) && interactCooldown <= 0f && !ParkingZone.IsReadyToPark)
             ExitCar();
     }
 
@@ -46,9 +55,10 @@ public class GameManager : MonoBehaviour
     {
         if (State == GameState.InCar || interactCooldown > 0f) return;
         if (NpcDialogue.Instance != null && !NpcDialogue.Instance.CarUnlocked) return;
-        interactCooldown = 1f;
+        interactCooldown = 3f;
         State = GameState.InCar;
         fpsController.enabled = false;
+        if (playerCollider != null) playerCollider.enabled = false;
         carRigidbody.isKinematic = false;
         carController.enabled = true;
         fpsController.transform.SetParent(carController.transform);
@@ -69,6 +79,7 @@ public class GameManager : MonoBehaviour
         fpsController.transform.position = exitPoint.position;
         fpsController.transform.rotation = Quaternion.Euler(0f, carController.transform.eulerAngles.y, 0f);
         cameraManager.SwitchToFPS();
+        if (playerCollider != null) playerCollider.enabled = true;
         fpsController.enabled = true;
     }
 }

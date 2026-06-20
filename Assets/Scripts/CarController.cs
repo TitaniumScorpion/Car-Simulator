@@ -30,6 +30,16 @@ public class CarController : MonoBehaviour
     public Light[] leftTurnLights;
     public Light[] rightTurnLights;
 
+    [Header("Stability")]
+    [Tooltip("Lower = more grip. Raise center Y to simulate higher CoM.")]
+    public Vector3 centerOfMassOffset = new Vector3(0f, -0.4f, 0f);
+    [Tooltip("Sideways grip for all wheels. 1 = default Unity, 2-3 = grippy car.")]
+    public float sidewaysFrictionStiffness = 2.5f;
+    [Tooltip("Forward grip stiffness.")]
+    public float forwardFrictionStiffness = 1.5f;
+    [Tooltip("Rigidbody angular drag to reduce spinning.")]
+    public float angularDrag = 3f;
+
     [Header("Horn")]
     public AudioClip hornClip;
     public AudioSource hornSource;
@@ -56,8 +66,27 @@ public class CarController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        rb.centerOfMass += centerOfMassOffset;
+        rb.angularDamping = angularDrag;
+        SetWheelFriction(frontLeftWheelCollider);
+        SetWheelFriction(frontRightWheelCollider);
+        SetWheelFriction(rearLeftWheelCollider);
+        SetWheelFriction(rearRightWheelCollider);
         SetLights(leftTurnLights,  false);
         SetLights(rightTurnLights, false);
+    }
+
+    private void SetWheelFriction(WheelCollider wheel)
+    {
+        if (wheel == null) return;
+
+        WheelFrictionCurve sideways = wheel.sidewaysFriction;
+        sideways.stiffness = sidewaysFrictionStiffness;
+        wheel.sidewaysFriction = sideways;
+
+        WheelFrictionCurve forward = wheel.forwardFriction;
+        forward.stiffness = forwardFrictionStiffness;
+        wheel.forwardFriction = forward;
     }
 
     private void Update()

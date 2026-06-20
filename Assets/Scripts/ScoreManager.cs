@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 public class ScoreManager : MonoBehaviour
@@ -30,9 +31,9 @@ public class ScoreManager : MonoBehaviour
     public void TriggerWin()
     {
         if (gameEnded) return;
-        isWin = true;
         gameEnded = true;
-        endReason = currentScore >= passingScore
+        isWin = currentScore >= passingScore;
+        endReason = isWin
             ? "Destination reached!"
             : "Reached destination, but score is too low.";
         EndGame();
@@ -66,6 +67,9 @@ public class ScoreManager : MonoBehaviour
     {
         if (notificationTimer > 0f)
             notificationTimer -= Time.deltaTime;
+
+        if (!gameEnded && Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+            Restart();
     }
 
     private void OnGUI()
@@ -93,12 +97,13 @@ public class ScoreManager : MonoBehaviour
     {
         float alpha = Mathf.Clamp01(notificationTimer / NotificationDuration);
         GUIStyle style = new GUIStyle(GUI.skin.label);
-        style.fontSize = 28;
+        style.fontSize = 26;
         style.fontStyle = FontStyle.Bold;
         style.alignment = TextAnchor.MiddleCenter;
+        style.wordWrap = false;
         style.normal.textColor = Color.red;
         GUI.color = new Color(1f, 1f, 1f, alpha);
-        GUI.Label(new Rect(Screen.width / 2f - 200, Screen.height * 0.2f, 400, 50), notificationText, style);
+        GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.2f, 600, 50), notificationText, style);
         GUI.color = Color.white;
     }
 
@@ -129,8 +134,35 @@ public class ScoreManager : MonoBehaviour
         GUI.Label(new Rect(cx - 300, cy - 40, 600, 40), endReason, infoStyle);
         GUI.Label(new Rect(cx - 300, cy + 10, 600, 40), $"Final Score: {currentScore} / {startingScore}", infoStyle);
 
-        if (GUI.Button(new Rect(cx - 110, cy + 70, 220, 55), "Restart Level", buttonStyle))
-            Restart();
+        int nextScene = SceneManager.GetActiveScene().buildIndex + 1;
+        bool hasNextScene = nextScene < SceneManager.sceneCountInBuildSettings;
+
+        if (isWin && hasNextScene)
+        {
+            if (GUI.Button(new Rect(cx - 230, cy + 70, 210, 55), "Next Level", buttonStyle))
+                LoadNext(nextScene);
+            if (GUI.Button(new Rect(cx + 20, cy + 70, 210, 55), "Restart Level", buttonStyle))
+                Restart();
+        }
+        else if (isWin)
+        {
+            if (GUI.Button(new Rect(cx - 230, cy + 70, 210, 55), "Restart Level", buttonStyle))
+                Restart();
+            if (GUI.Button(new Rect(cx + 20, cy + 70, 210, 55), "Exit Game", buttonStyle))
+                Application.Quit();
+        }
+        else
+        {
+            if (GUI.Button(new Rect(cx - 110, cy + 70, 220, 55), "Restart Level", buttonStyle))
+                Restart();
+        }
+    }
+
+    private void LoadNext(int index)
+    {
+        Time.timeScale = 1f;
+        GameManager.StartInCar = true;
+        SceneManager.LoadScene(index);
     }
 
     private void Restart()

@@ -15,7 +15,7 @@ public class DashboardUI : MonoBehaviour
         if (GameManager.Instance == null || GameManager.Instance.State != GameManager.GameState.InCar) return;
         if (car == null) return;
 
-        const float panelW = 180f;
+        const float panelW = 230f;
         const float panelH = 110f;
         const float margin = 20f;
         float x = Screen.width  - panelW - margin;
@@ -134,6 +134,7 @@ public class DashboardUI : MonoBehaviour
             "X / C       -  Signals",
             "F              -  Horn",
             "E              -  Exit Car",
+            "R              -  Reset (if stuck)",
         };
 
         const float lineH   = 24f;
