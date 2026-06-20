@@ -87,6 +87,9 @@ public class CarController : MonoBehaviour
         verticalInput   = 0f;
         isBraking       = false;
 
+        if (GameManager.Instance == null || GameManager.Instance.CurrentEngineState != GameManager.EngineState.Running)
+            return;
+
         if (Keyboard.current != null)
         {
             if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed)    verticalInput  += 1f;

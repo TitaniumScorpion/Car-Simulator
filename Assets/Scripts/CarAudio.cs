@@ -4,6 +4,7 @@ using UnityEngine;
 public class CarAudio : MonoBehaviour
 {
     [Header("Engine")]
+    public AudioClip engineStartClip;
     public AudioClip engineClip;
     [Range(0f, 1f)] public float engineVolume = 0.6f;
     [Tooltip("Pitch at idle / zero speed.")]
@@ -30,6 +31,7 @@ public class CarAudio : MonoBehaviour
     public float impactCooldown = 0.3f;
 
     private CarController car;
+    private AudioSource engineStartSource;
     private AudioSource engineSource;
     private AudioSource brakeSource;
     private AudioSource impactSource;
@@ -39,12 +41,16 @@ public class CarAudio : MonoBehaviour
     {
         car = GetComponent<CarController>();
 
+        engineStartSource = gameObject.AddComponent<AudioSource>();
+        engineStartSource.loop        = false;
+        engineStartSource.playOnAwake = false;
+
         engineSource = gameObject.AddComponent<AudioSource>();
-        engineSource.clip = engineClip;
-        engineSource.loop = true;
+        engineSource.clip        = engineClip;
+        engineSource.loop        = true;
         engineSource.playOnAwake = false;
-        engineSource.volume = 0f;
-        engineSource.pitch = enginePitchMin;
+        engineSource.volume      = 0f;
+        engineSource.pitch       = enginePitchMin;
 
         brakeSource = gameObject.AddComponent<AudioSource>();
         brakeSource.clip = brakeSquealClip;
@@ -61,8 +67,9 @@ public class CarAudio : MonoBehaviour
     {
         if (ScoreManager.Instance != null && ScoreManager.Instance.IsGameEnded)
         {
-            if (engineSource.isPlaying) engineSource.Stop();
-            if (brakeSource.isPlaying)  brakeSource.Stop();
+            if (engineStartSource.isPlaying) engineStartSource.Stop();
+            if (engineSource.isPlaying)      engineSource.Stop();
+            if (brakeSource.isPlaying)       brakeSource.Stop();
             return;
         }
 
@@ -72,22 +79,33 @@ public class CarAudio : MonoBehaviour
 
     private void UpdateEngineSound()
     {
-        if (engineClip == null) return;
+        if (GameManager.Instance == null) return;
 
-        bool running = car.enabled;
-        float targetVolume = running ? engineVolume : 0f;
-
-        engineSource.volume = Mathf.MoveTowards(engineSource.volume, targetVolume, Time.deltaTime * 3f);
-
-        if (running && !engineSource.isPlaying)
-            engineSource.Play();
-        else if (engineSource.volume <= 0f && engineSource.isPlaying)
-            engineSource.Stop();
-
-        if (running)
+        switch (GameManager.Instance.CurrentEngineState)
         {
-            float speedRatio = Mathf.Clamp01(car.SpeedKmh / engineTopSpeed);
-            engineSource.pitch = Mathf.Lerp(enginePitchMin, enginePitchMax, speedRatio);
+            case GameManager.EngineState.Off:
+                if (engineStartSource.isPlaying) engineStartSource.Stop();
+                if (engineSource.isPlaying)      engineSource.Stop();
+                engineSource.volume = 0f;
+                break;
+
+            case GameManager.EngineState.Starting:
+                if (engineSource.isPlaying) engineSource.Stop();
+                if (!engineStartSource.isPlaying && engineStartClip != null)
+                {
+                    engineStartSource.clip = engineStartClip;
+                    engineStartSource.Play();
+                }
+                break;
+
+            case GameManager.EngineState.Running:
+                if (engineStartSource.isPlaying) engineStartSource.Stop();
+                if (engineClip == null) break;
+                if (!engineSource.isPlaying) engineSource.Play();
+                engineSource.volume = Mathf.MoveTowards(engineSource.volume, engineVolume, Time.deltaTime * 3f);
+                float speedRatio = Mathf.Clamp01(car.SpeedKmh / engineTopSpeed);
+                engineSource.pitch = Mathf.Lerp(enginePitchMin, enginePitchMax, speedRatio);
+                break;
         }
     }
 

@@ -6,8 +6,15 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
     public static bool StartInCar = false;
 
-    public enum GameState { OnFoot, InCar }
-    public GameState State { get; private set; } = GameState.OnFoot;
+    public enum GameState  { OnFoot, InCar }
+    public enum EngineState { Off, Starting, Running }
+
+    public GameState   State               { get; private set; } = GameState.OnFoot;
+    public EngineState CurrentEngineState  { get; private set; } = EngineState.Off;
+    public bool        IsEngineRunning     => CurrentEngineState == EngineState.Running;
+
+    private const float EngineStartDuration = 4f;
+    private float engineStartTimer;
 
     [Header("References")]
     public FpsController fpsController;
@@ -51,18 +58,68 @@ public class GameManager : MonoBehaviour
         if (interactCooldown > 0f) interactCooldown -= Time.deltaTime;
 
         if (State != GameState.InCar) return;
-        bool ePressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
-        bool yPressed = Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame;
-        if ((ePressed || yPressed) && interactCooldown <= 0f && canExitCar && !ParkingZone.IsReadyToPark)
-            ExitCar();
+
+        bool ePressed = (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+                     || (Gamepad.current  != null && Gamepad.current.buttonNorth.wasPressedThisFrame);
+
+        switch (CurrentEngineState)
+        {
+            case EngineState.Off:
+                if (ePressed && interactCooldown <= 0f)
+                    BeginEngineStart();
+                break;
+
+            case EngineState.Starting:
+                engineStartTimer += Time.deltaTime;
+                if (engineStartTimer >= EngineStartDuration)
+                    CurrentEngineState = EngineState.Running;
+                break;
+
+            case EngineState.Running:
+                if (ePressed && interactCooldown <= 0f && canExitCar && !ParkingZone.IsReadyToPark)
+                    ExitCar();
+                break;
+        }
+    }
+
+    private void BeginEngineStart()
+    {
+        CurrentEngineState = EngineState.Starting;
+        engineStartTimer   = 0f;
+    }
+
+    private void OnGUI()
+    {
+        if (State != GameState.InCar) return;
+
+        GUIStyle style = new GUIStyle(GUI.skin.label);
+        style.fontSize  = 28;
+        style.fontStyle = FontStyle.Bold;
+        style.alignment = TextAnchor.MiddleCenter;
+        style.normal.textColor = Color.white;
+
+        Rect rect = new Rect(Screen.width / 2f - 220, Screen.height * 0.75f, 440, 50);
+
+        if (CurrentEngineState == EngineState.Off && interactCooldown <= 0f)
+        {
+            GUI.Label(rect, "[E]  Start Engine", style);
+        }
+        else if (CurrentEngineState == EngineState.Starting)
+        {
+            string dots = new string('.', Mathf.FloorToInt(Time.time * 2f) % 4);
+            style.normal.textColor = new Color(1f, 0.85f, 0.3f);
+            GUI.Label(rect, $"Starting engine{dots}", style);
+        }
     }
 
     public void EnterCar()
     {
         if (State == GameState.InCar || interactCooldown > 0f) return;
         if (NpcDialogue.Instance != null && !NpcDialogue.Instance.CarUnlocked) return;
-        interactCooldown = 3f;
-        State = GameState.InCar;
+        interactCooldown   = 3f;
+        State              = GameState.InCar;
+        CurrentEngineState = EngineState.Off;
+        engineStartTimer   = 0f;
         fpsController.enabled = false;
         if (playerCollider != null) playerCollider.enabled = false;
         SetPlayerVisible(false);
@@ -77,8 +134,9 @@ public class GameManager : MonoBehaviour
     public void ExitCar()
     {
         if (State == GameState.OnFoot) return;
-        interactCooldown = 1f;
-        State = GameState.OnFoot;
+        interactCooldown   = 1f;
+        State              = GameState.OnFoot;
+        CurrentEngineState = EngineState.Off;
         carController.enabled = false;
         carRigidbody.linearVelocity = Vector3.zero;
         carRigidbody.angularVelocity = Vector3.zero;
