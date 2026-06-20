@@ -15,8 +15,12 @@ public class GameManager : MonoBehaviour
     public CameraManager cameraManager;
     public Transform exitPoint;
 
+    [Header("Settings")]
+    public bool canExitCar = true;
+
     private Rigidbody carRigidbody;
     private CharacterController playerCollider;
+    private Renderer[] playerRenderers;
     private float interactCooldown;
 
     private void Awake()
@@ -31,7 +35,8 @@ public class GameManager : MonoBehaviour
         carRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
         carRigidbody.isKinematic = true;
         carController.enabled = false;
-        playerCollider = fpsController.GetComponent<CharacterController>();
+        playerCollider    = fpsController.GetComponent<CharacterController>();
+        playerRenderers   = fpsController.GetComponentsInChildren<Renderer>();
 
         if (StartInCar)
         {
@@ -47,7 +52,7 @@ public class GameManager : MonoBehaviour
         if (State != GameState.InCar) return;
         bool ePressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
         bool yPressed = Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame;
-        if ((ePressed || yPressed) && interactCooldown <= 0f && !ParkingZone.IsReadyToPark)
+        if ((ePressed || yPressed) && interactCooldown <= 0f && canExitCar && !ParkingZone.IsReadyToPark)
             ExitCar();
     }
 
@@ -59,10 +64,12 @@ public class GameManager : MonoBehaviour
         State = GameState.InCar;
         fpsController.enabled = false;
         if (playerCollider != null) playerCollider.enabled = false;
+        SetPlayerVisible(false);
         carRigidbody.isKinematic = false;
         carController.enabled = true;
         fpsController.transform.SetParent(carController.transform);
         fpsController.transform.localPosition = Vector3.zero;
+        fpsController.transform.localRotation = Quaternion.identity;
         cameraManager.SwitchToTPS();
     }
 
@@ -79,7 +86,14 @@ public class GameManager : MonoBehaviour
         fpsController.transform.position = exitPoint.position;
         fpsController.transform.rotation = Quaternion.Euler(0f, carController.transform.eulerAngles.y, 0f);
         cameraManager.SwitchToFPS();
+        SetPlayerVisible(true);
         if (playerCollider != null) playerCollider.enabled = true;
         fpsController.enabled = true;
+    }
+
+    private void SetPlayerVisible(bool visible)
+    {
+        if (playerRenderers == null) return;
+        foreach (var r in playerRenderers) if (r != null) r.enabled = visible;
     }
 }

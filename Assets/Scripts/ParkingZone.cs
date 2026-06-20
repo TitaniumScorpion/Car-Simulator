@@ -7,37 +7,42 @@ public class ParkingZone : MonoBehaviour
 
     [Header("Parking Requirements")]
     [SerializeField] private float maxParkSpeedKmh = 2f;
-    [SerializeField] private float maxAlignAngle = 35f;
+    [SerializeField] private float maxAlignAngle   = 35f;
 
     [Header("Visual")]
     [SerializeField] private Renderer parkingVisual;
-    [SerializeField] private Color idleColor   = new Color(1f, 0.85f, 0f, 0.8f);
-    [SerializeField] private Color insideColor = new Color(0.2f, 1f, 0.3f, 0.9f);
-    [SerializeField] private float blinkSpeed  = 2f;
+    [SerializeField] private Color idleColor  = new Color(1f, 0.85f, 0f);
+    [SerializeField] private Color readyColor = new Color(0.2f, 1f, 0.3f);
+    [SerializeField] private float blinkSpeed = 2f;
 
-    private Material visualMat;
-    private bool carInside;
-    private Rigidbody carRb;
-    private Transform carTransform;
+    private Material   visualMat;
+    private BoxCollider zoneBox;
+    private bool        carInside;
+    private Rigidbody   carRb;
+    private Transform   carTransform;
+    private CarController carController;
 
     private void Awake()
     {
+        zoneBox = GetComponent<BoxCollider>();
         if (parkingVisual != null)
             visualMat = parkingVisual.material;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.transform.root.CompareTag("PlayerCar")) return;
-        carInside = true;
-        carTransform = other.transform.root;
-        carRb = carTransform.GetComponent<Rigidbody>();
+        var car = other.GetComponentInParent<CarController>();
+        if (car == null) return;
+        carInside     = true;
+        carController = car;
+        carTransform  = car.transform;
+        carRb         = car.GetComponent<Rigidbody>();
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (!other.transform.root.CompareTag("PlayerCar")) return;
-        carInside = false;
+        if (other.GetComponentInParent<CarController>() == null) return;
+        carInside     = false;
         IsReadyToPark = false;
     }
 
@@ -46,42 +51,69 @@ public class ParkingZone : MonoBehaviour
         UpdateVisual();
 
         if (ScoreManager.Instance == null || ScoreManager.Instance.IsGameEnded) return;
-        if (GameManager.Instance == null || GameManager.Instance.State != GameManager.GameState.InCar) return;
+        if (GameManager.Instance  == null || GameManager.Instance.State != GameManager.GameState.InCar) return;
 
-        IsReadyToPark = carInside && CanPark();
+        IsReadyToPark = carInside && IsFullyInside() && CanPark();
 
         if (!IsReadyToPark) return;
 
         bool ePressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
-        bool yPressed = Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame;
+        bool yPressed = Gamepad.current  != null && Gamepad.current.buttonNorth.wasPressedThisFrame;
         if (ePressed || yPressed)
             ScoreManager.Instance.TriggerWin();
+    }
+
+    // All four wheel positions must be inside the zone box (handles rotation correctly).
+    private bool IsFullyInside()
+    {
+        if (carController == null || zoneBox == null) return false;
+
+        WheelCollider[] wheels =
+        {
+            carController.frontLeftWheelCollider,
+            carController.frontRightWheelCollider,
+            carController.rearLeftWheelCollider,
+            carController.rearRightWheelCollider
+        };
+
+        Vector3 half = zoneBox.size * 0.5f;
+
+        foreach (var wheel in wheels)
+        {
+            if (wheel == null) continue;
+            Vector3 local = transform.InverseTransformPoint(wheel.transform.position) - zoneBox.center;
+            if (Mathf.Abs(local.x) > half.x || Mathf.Abs(local.z) > half.z)
+                return false;
+        }
+        return true;
     }
 
     private bool CanPark()
     {
         if (carRb == null) return false;
-        bool stopped = carRb.linearVelocity.magnitude * 3.6f <= maxParkSpeedKmh;
-        float angle = Vector3.Angle(carTransform.forward, transform.forward);
-        bool aligned = angle <= maxAlignAngle || angle >= 180f - maxAlignAngle;
+        bool stopped  = carRb.linearVelocity.magnitude * 3.6f <= maxParkSpeedKmh;
+        float angle   = Vector3.Angle(carTransform.forward, transform.right);
+        bool aligned  = angle <= maxAlignAngle || angle >= 180f - maxAlignAngle;
         return stopped && aligned;
     }
 
     private void UpdateVisual()
     {
-        if (visualMat == null) return;
+        if (parkingVisual == null || visualMat == null) return;
         float t = Mathf.PingPong(Time.time * blinkSpeed, 1f);
-        Color baseColor = carInside ? insideColor : idleColor;
-        Color dimColor  = new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * 0.15f);
-        visualMat.color = Color.Lerp(dimColor, baseColor, t);
+        parkingVisual.enabled = t > 0.5f;
+        if (parkingVisual.enabled)
+            visualMat.SetColor("_Color", IsReadyToPark ? readyColor : idleColor);
     }
 
-    private void OnDisable() => IsReadyToPark = false;
+    private void OnDisable()  => IsReadyToPark = false;
+    private void OnDestroy()  => IsReadyToPark = false;
 
     private void OnGUI()
     {
+        if (this == null) return;
         if (ScoreManager.Instance == null || ScoreManager.Instance.IsGameEnded) return;
-        if (GameManager.Instance == null || GameManager.Instance.State != GameManager.GameState.InCar) return;
+        if (GameManager.Instance  == null || GameManager.Instance.State != GameManager.GameState.InCar) return;
 
         if (!carInside)
         {
@@ -89,10 +121,11 @@ public class ParkingZone : MonoBehaviour
             return;
         }
 
-        if (CanPark())
+        bool fullyInside = IsFullyInside();
+        if (fullyInside && CanPark())
             DrawParkPrompt();
         else
-            DrawAlignHint();
+            DrawAlignHint(fullyInside);
     }
 
     private void DrawWaypoint()
@@ -104,20 +137,19 @@ public class ParkingZone : MonoBehaviour
         sp.y = Screen.height - sp.y;
 
         GUIStyle style = new GUIStyle(GUI.skin.label);
-        style.fontSize = 22;
+        style.fontSize  = 22;
         style.fontStyle = FontStyle.Bold;
         style.alignment = TextAnchor.MiddleCenter;
-        style.normal.textColor = new Color(1f, 0.85f, 0.1f);
+        style.normal.textColor = IsReadyToPark ? new Color(0.2f, 1f, 0.3f) : new Color(1f, 0.85f, 0.1f);
 
-        bool onScreen = sp.z > 0 && sp.x > 50 && sp.x < Screen.width - 50 && sp.y > 50 && sp.y < Screen.height - 50;
-
+        bool onScreen = sp.z > 0 && sp.x > 50 && sp.x < Screen.width - 50
+                                  && sp.y > 50 && sp.y < Screen.height - 50;
         if (onScreen)
         {
             GUI.Label(new Rect(sp.x - 70, sp.y - 22, 140, 44), "[PARK]", style);
         }
         else
         {
-            // Clamp arrow to screen edge
             Vector2 dir = new Vector2(sp.x - Screen.width / 2f, sp.y - Screen.height / 2f);
             if (sp.z < 0) dir = -dir;
             dir.Normalize();
@@ -131,21 +163,26 @@ public class ParkingZone : MonoBehaviour
     private void DrawParkPrompt()
     {
         GUIStyle style = new GUIStyle(GUI.skin.label);
-        style.fontSize = 28;
+        style.fontSize  = 28;
         style.fontStyle = FontStyle.Bold;
         style.alignment = TextAnchor.MiddleCenter;
         style.normal.textColor = new Color(0.2f, 1f, 0.3f);
         GUI.Label(new Rect(Screen.width / 2f - 200, Screen.height * 0.75f, 400, 50), "[E]  Park Here", style);
     }
 
-    private void DrawAlignHint()
+    private void DrawAlignHint(bool fullyInside)
     {
         if (carRb == null) return;
-        bool stopped = carRb.linearVelocity.magnitude * 3.6f <= maxParkSpeedKmh;
-        string hint = stopped ? "Align with the parking spot" : "Slow down to park";
+        string hint;
+        if (!fullyInside)
+            hint = "Pull fully into the parking spot";
+        else if (carRb.linearVelocity.magnitude * 3.6f > maxParkSpeedKmh)
+            hint = "Slow down to park";
+        else
+            hint = "Align with the parking spot";
 
         GUIStyle style = new GUIStyle(GUI.skin.label);
-        style.fontSize = 22;
+        style.fontSize  = 22;
         style.alignment = TextAnchor.MiddleCenter;
         style.normal.textColor = new Color(1f, 0.85f, 0.3f);
         GUI.Label(new Rect(Screen.width / 2f - 220, Screen.height * 0.75f, 440, 44), hint, style);
