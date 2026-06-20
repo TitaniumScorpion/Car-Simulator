@@ -34,6 +34,10 @@ public class CarController : MonoBehaviour
     public AudioClip hornClip;
     public AudioSource hornSource;
 
+    [Header("Gear Shift Sounds")]
+    public AudioClip shiftUpClip;
+    public AudioClip shiftDownClip;
+
     private float horizontalInput;
     private float verticalInput;
     private bool isBraking;
@@ -41,6 +45,7 @@ public class CarController : MonoBehaviour
     private float currentBrakeForce;
     private int currentGear = 1;
     private Rigidbody rb;
+    private AudioSource gearShiftSource;
 
     private bool leftSignalOn;
     private bool rightSignalOn;
@@ -57,6 +62,8 @@ public class CarController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        gearShiftSource = gameObject.AddComponent<AudioSource>();
+        gearShiftSource.playOnAwake = false;
         SetLights(leftTurnLights,  false);
         SetLights(rightTurnLights, false);
     }
@@ -165,12 +172,14 @@ public class CarController : MonoBehaviour
     {
         if (currentGear == -1) currentGear = 1;
         else currentGear = Mathf.Min(currentGear + 1, gearTorqueMultipliers.Length);
+        if (shiftUpClip != null) gearShiftSource.PlayOneShot(shiftUpClip);
     }
 
     private void ShiftDown()
     {
         if (currentGear == 1) currentGear = -1;
         else if (currentGear > 1) currentGear--;
+        if (shiftDownClip != null) gearShiftSource.PlayOneShot(shiftDownClip);
     }
 
     private void HandleMotor()
