@@ -168,6 +168,7 @@ public class ScoreManager : MonoBehaviour
     private void Restart()
     {
         Time.timeScale = 1f;
+        GameManager.StartInCar = true;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

@@ -41,6 +41,7 @@ public class GameManager : MonoBehaviour
         if (StartInCar)
         {
             StartInCar = false;
+            if (NpcDialogue.Instance != null) NpcDialogue.Instance.CloseDialog();
             EnterCar();
         }
     }
