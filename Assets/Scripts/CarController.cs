@@ -57,8 +57,9 @@ public class CarController : MonoBehaviour
     private float blinkTimer;
     private bool blinkState;
 
-    public float SpeedKmh  => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
-    public int   CurrentGear  => currentGear;
+    public float SpeedKmh      => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
+    public int   CurrentGear   => currentGear;
+    public bool  IsBraking     => isBraking;
     public bool  LeftSignalOn  => leftSignalOn;
     public bool  RightSignalOn => rightSignalOn;
     public bool  BlinkState    => blinkState;
