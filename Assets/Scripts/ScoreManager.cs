@@ -10,11 +10,16 @@ public class ScoreManager : MonoBehaviour
     public int startingScore = 100;
     public int passingScore = 50;
 
+    [Header("Completion Sounds")]
+    public AudioClip passingScoreClip;
+    public AudioClip lowScoreClip;
+
     private int currentScore;
     private bool gameEnded;
     private bool isWin;
     private string endReason;
 
+    private AudioSource completionSource;
     private string notificationText;
     private float notificationTimer;
     private const float NotificationDuration = 2.5f;
@@ -24,6 +29,8 @@ public class ScoreManager : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         currentScore = startingScore;
+        completionSource = gameObject.AddComponent<AudioSource>();
+        completionSource.playOnAwake = false;
     }
 
     public bool IsGameEnded => gameEnded;
@@ -36,6 +43,8 @@ public class ScoreManager : MonoBehaviour
         endReason = isWin
             ? "Destination reached!"
             : "Reached destination, but score is too low.";
+        AudioClip clip = isWin ? passingScoreClip : lowScoreClip;
+        if (clip != null) completionSource.PlayOneShot(clip);
         EndGame();
     }
 

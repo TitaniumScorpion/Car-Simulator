@@ -3,6 +3,16 @@ using UnityEngine;
 [RequireComponent(typeof(CarController))]
 public class CarAudio : MonoBehaviour
 {
+    [Header("Engine")]
+    public AudioClip engineClip;
+    [Range(0f, 1f)] public float engineVolume = 0.6f;
+    [Tooltip("Pitch at idle / zero speed.")]
+    public float enginePitchMin = 0.5f;
+    [Tooltip("Pitch at top speed.")]
+    public float enginePitchMax = 2.5f;
+    [Tooltip("Speed in km/h mapped to max pitch.")]
+    public float engineTopSpeed = 120f;
+
     [Header("Brake Squeal")]
     public AudioClip brakeSquealClip;
     [Range(0f, 1f)] public float brakeSquealMaxVolume = 1f;
@@ -20,6 +30,7 @@ public class CarAudio : MonoBehaviour
     public float impactCooldown = 0.3f;
 
     private CarController car;
+    private AudioSource engineSource;
     private AudioSource brakeSource;
     private AudioSource impactSource;
     private float lastImpactTime = -10f;
@@ -27,6 +38,13 @@ public class CarAudio : MonoBehaviour
     private void Awake()
     {
         car = GetComponent<CarController>();
+
+        engineSource = gameObject.AddComponent<AudioSource>();
+        engineSource.clip = engineClip;
+        engineSource.loop = true;
+        engineSource.playOnAwake = false;
+        engineSource.volume = 0f;
+        engineSource.pitch = enginePitchMin;
 
         brakeSource = gameObject.AddComponent<AudioSource>();
         brakeSource.clip = brakeSquealClip;
@@ -41,7 +59,36 @@ public class CarAudio : MonoBehaviour
 
     private void Update()
     {
+        if (ScoreManager.Instance != null && ScoreManager.Instance.IsGameEnded)
+        {
+            if (engineSource.isPlaying) engineSource.Stop();
+            if (brakeSource.isPlaying)  brakeSource.Stop();
+            return;
+        }
+
+        UpdateEngineSound();
         UpdateBrakeSound();
+    }
+
+    private void UpdateEngineSound()
+    {
+        if (engineClip == null) return;
+
+        bool running = car.enabled;
+        float targetVolume = running ? engineVolume : 0f;
+
+        engineSource.volume = Mathf.MoveTowards(engineSource.volume, targetVolume, Time.deltaTime * 3f);
+
+        if (running && !engineSource.isPlaying)
+            engineSource.Play();
+        else if (engineSource.volume <= 0f && engineSource.isPlaying)
+            engineSource.Stop();
+
+        if (running)
+        {
+            float speedRatio = Mathf.Clamp01(car.SpeedKmh / engineTopSpeed);
+            engineSource.pitch = Mathf.Lerp(enginePitchMin, enginePitchMax, speedRatio);
+        }
     }
 
     private void UpdateBrakeSound()
@@ -60,6 +107,7 @@ public class CarAudio : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         if (impactClip == null) return;
+        if (ScoreManager.Instance != null && ScoreManager.Instance.IsGameEnded) return;
         if (Time.time - lastImpactTime < impactCooldown) return;
 
         float magnitude = collision.relativeVelocity.magnitude;
