@@ -9,7 +9,17 @@ public class PenaltyZone : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (!other.transform.root.CompareTag("PlayerCar")) return;
+        ApplyPenalty();
+    }
 
+    private void OnCollisionEnter(Collision other)
+    {
+        if (!other.transform.root.CompareTag("PlayerCar")) return;
+        ApplyPenalty();
+    }
+
+    private void ApplyPenalty()
+    {
         if (instantLose)
             ScoreManager.Instance.TriggerLose(message);
         else

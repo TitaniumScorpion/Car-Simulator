@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum LightState { Green, Yellow, Red }
+public enum LightState { Green, Yellow, Red, YellowToGreen }
 
 public class TrafficLight : MonoBehaviour
 {
@@ -10,6 +10,7 @@ public class TrafficLight : MonoBehaviour
     public float redDuration = 5f;
 
     [Header("Start")]
+    public bool randomizeStart = true;
     public LightState startState = LightState.Green;
     [Tooltip("Seconds already elapsed at game start. Use to stagger multiple lights.")]
     public float startTimeOffset = 0f;
@@ -24,8 +25,17 @@ public class TrafficLight : MonoBehaviour
 
     private void Start()
     {
-        CurrentState = startState;
-        timer = Mathf.Max(0f, GetDuration(startState) - startTimeOffset);
+        if (randomizeStart)
+        {
+            var states = new[] { LightState.Green, LightState.Yellow, LightState.Red, LightState.YellowToGreen };
+            CurrentState = states[Random.Range(0, states.Length)];
+            timer = Random.Range(0f, GetDuration(CurrentState));
+        }
+        else
+        {
+            CurrentState = startState;
+            timer = Mathf.Max(0f, GetDuration(startState) - startTimeOffset);
+        }
         ApplyVisuals();
     }
 
@@ -44,9 +54,10 @@ public class TrafficLight : MonoBehaviour
     {
         switch (state)
         {
-            case LightState.Green:  return LightState.Yellow;
-            case LightState.Yellow: return LightState.Red;
-            default:                return LightState.Green;
+            case LightState.Green:         return LightState.Yellow;
+            case LightState.Yellow:        return LightState.Red;
+            case LightState.Red:           return LightState.YellowToGreen;
+            default:                       return LightState.Green;
         }
     }
 
@@ -54,16 +65,18 @@ public class TrafficLight : MonoBehaviour
     {
         switch (state)
         {
-            case LightState.Green:  return greenDuration;
-            case LightState.Yellow: return yellowDuration;
-            default:                return redDuration;
+            case LightState.Green:         return greenDuration;
+            case LightState.Yellow:        return yellowDuration;
+            case LightState.Red:           return redDuration;
+            default:                       return yellowDuration;
         }
     }
 
     private void ApplyVisuals()
     {
+        bool isYellow = CurrentState == LightState.Yellow || CurrentState == LightState.YellowToGreen;
         if (redLightObject)    redLightObject.SetActive(CurrentState == LightState.Red);
-        if (yellowLightObject) yellowLightObject.SetActive(CurrentState == LightState.Yellow);
+        if (yellowLightObject) yellowLightObject.SetActive(isYellow);
         if (greenLightObject)  greenLightObject.SetActive(CurrentState == LightState.Green);
     }
 }

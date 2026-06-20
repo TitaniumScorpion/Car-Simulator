@@ -39,8 +39,7 @@ public class FpsController : MonoBehaviour
     {
         HandleLook();
         HandleMovement();
-        DetectVehicle();
-        DetectNpc();
+        DetectInteractable();
         HandleInteract();
     }
 
@@ -94,33 +93,17 @@ public class FpsController : MonoBehaviour
         cc.Move(velocity * Time.deltaTime);
     }
 
-    private void DetectVehicle()
+    private void DetectInteractable()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, interactRange);
         nearbyVehicle = null;
-        foreach (var col in hits)
-        {
-            var car = col.GetComponentInParent<CarController>();
-            if (car != null) { nearbyVehicle = car; break; }
-        }
-    }
-
-    private void DetectNpc()
-    {
-        Collider[] hits = Physics.OverlapSphere(transform.position, interactRange);
         nearbyNpc = null;
-        foreach (var col in hits)
-        {
-            var npc = col.GetComponentInParent<NpcDialogue>();
-            if (npc != null) { nearbyNpc = npc; break; }
-        }
-    }
+        if (!Physics.Raycast(fpsHead.position, fpsHead.forward, out RaycastHit hit, interactRange)) return;
 
-    private bool IsLookingAtVehicle()
-    {
-        if (nearbyVehicle == null) return false;
-        Vector3 toVehicle = nearbyVehicle.transform.position - fpsHead.position;
-        return Vector3.Dot(fpsHead.forward, toVehicle.normalized) > 0.4f;
+        var car = hit.collider.GetComponentInParent<CarController>();
+        if (car != null) { nearbyVehicle = car; return; }
+
+        var npc = hit.collider.GetComponentInParent<NpcDialogue>();
+        if (npc != null) nearbyNpc = npc;
     }
 
     private void HandleInteract()
@@ -142,7 +125,7 @@ public class FpsController : MonoBehaviour
             return;
         }
 
-        if ((ePressed || yPressed) && nearbyVehicle != null && IsLookingAtVehicle() && carUnlocked)
+        if ((ePressed || yPressed) && nearbyVehicle != null && carUnlocked)
             GameManager.Instance.EnterCar();
     }
 
@@ -164,7 +147,7 @@ public class FpsController : MonoBehaviour
             return;
         }
 
-        if (nearbyVehicle == null || !IsLookingAtVehicle() || !carUnlocked) return;
-        GUI.Label(new Rect(Screen.width / 2f - 160, Screen.height * 0.75f, 320, 50), "[E] Araca Bin", style);
+        if (nearbyVehicle == null || !carUnlocked) return;
+        GUI.Label(new Rect(Screen.width / 2f - 160, Screen.height * 0.75f, 320, 50), "[E] Enter Car", style);
     }
 }

@@ -35,8 +35,8 @@ public class NpcDialogue : MonoBehaviour
     {
         if (!IsDialogOpen) return;
 
-        const float boxW = 520f;
-        const float boxH = 160f;
+        const float boxW = 640f;
+        const float boxH = 200f;
         float boxX = Screen.width / 2f - boxW / 2f;
         float boxY = Screen.height * 0.62f;
 
@@ -45,22 +45,22 @@ public class NpcDialogue : MonoBehaviour
         GUI.color = Color.white;
 
         GUIStyle nameStyle = new GUIStyle(GUI.skin.label);
-        nameStyle.fontSize = 18;
+        nameStyle.fontSize = 24;
         nameStyle.fontStyle = FontStyle.Bold;
         nameStyle.normal.textColor = new Color(1f, 0.85f, 0.3f);
-        GUI.Label(new Rect(boxX + 18f, boxY + 14f, boxW - 36f, 26f), npcName, nameStyle);
+        GUI.Label(new Rect(boxX + 20f, boxY + 16f, boxW - 40f, 32f), npcName, nameStyle);
 
         GUIStyle lineStyle = new GUIStyle(GUI.skin.label);
-        lineStyle.fontSize = 16;
+        lineStyle.fontSize = 20;
         lineStyle.wordWrap = true;
         lineStyle.normal.textColor = Color.white;
-        GUI.Label(new Rect(boxX + 18f, boxY + 46f, boxW - 36f, 82f), dialogueLine, lineStyle);
+        GUI.Label(new Rect(boxX + 20f, boxY + 56f, boxW - 40f, 110f), dialogueLine, lineStyle);
 
         GUIStyle hintStyle = new GUIStyle(GUI.skin.label);
-        hintStyle.fontSize = 14;
+        hintStyle.fontSize = 16;
         hintStyle.fontStyle = FontStyle.Bold;
         hintStyle.alignment = TextAnchor.MiddleRight;
         hintStyle.normal.textColor = new Color(0.65f, 0.65f, 0.65f);
-        GUI.Label(new Rect(boxX, boxY + boxH - 30f, boxW - 14f, 26f), "[E] Continue", hintStyle);
+        GUI.Label(new Rect(boxX, boxY + boxH - 32f, boxW - 16f, 28f), "[E] Continue", hintStyle);
     }
 }

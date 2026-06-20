@@ -136,7 +136,7 @@ public class DashboardUI : MonoBehaviour
             "E              -  Exit Car",
         };
 
-        const float lineH   = 20f;
+        const float lineH   = 24f;
         const float padV    = 10f;
         const float padH    = 10f;
         const float gap     = 8f;
@@ -150,7 +150,7 @@ public class DashboardUI : MonoBehaviour
         GUI.color = Color.white;
 
         GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
-        labelStyle.fontSize  = 12;
+        labelStyle.fontSize  = 16;
         labelStyle.normal.textColor = new Color(0.85f, 0.85f, 0.85f);
 
         for (int i = 0; i < lines.Length; i++)
